@@ -31,4 +31,5 @@
 ; (search-for-primes 10000 10050)
 ; (search-for-primes 100000 100050)
 ; (search-for-primes 1000000 1000050)
+
 ; n が10倍になると要する時間はおよそ√10（≒3.162）倍となっている。
