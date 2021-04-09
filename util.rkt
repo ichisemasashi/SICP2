@@ -28,3 +28,11 @@
   (if (= b 0)
       a
       (gcd b (remainder a b))))
+
+(define (accumulate combiner null-value term a next b)
+  (define (iter a result)
+    (if (< b a) result
+       (iter (next a) (combiner result (term a)))))
+  (iter a null-value))
+(define (sum term a next b)
+  (accumulate + 0 term a next b))
