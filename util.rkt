@@ -36,3 +36,6 @@
   (iter a null-value))
 (define (sum term a next b)
   (accumulate + 0 term a next b))
+
+(define (average x y)
+  (/ (+ x y) 2.0))
