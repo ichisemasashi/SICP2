@@ -49,7 +49,7 @@
 ;  (lambda (f)
 ;    (lambda (x)
 ;      ...)))
-;... = (f (f (f ... x) ; fが(a+b)個並ぶ
+;... = (f (f (f (f ...(f x) ; fが(a+b)個並ぶ
 
 ;(define (add-1 n)
 ;  (lambda (f)
