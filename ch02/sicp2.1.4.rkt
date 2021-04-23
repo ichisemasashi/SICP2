@@ -17,7 +17,7 @@
 
 ;二つの区間を足す手続き: 和が取りうる最小値は二つの下限の和であり、最大値は二つの上限の和
 (define (add-interval x y)
-  (make-interval (+ (lower-bount x) (lower-bound y))
+  (make-interval (+ (lower-bound x) (lower-bound y))
                     (+ (upper-bound x) (upper-bound y))))
 
 ;両端点の積の最小値と最大値を求め、それらを答えとなる区間の下限と上限とすることによって、
