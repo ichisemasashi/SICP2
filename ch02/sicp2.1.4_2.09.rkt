@@ -6,7 +6,7 @@
 ;組み合わせたものの幅は、引数の幅の関数とはならない。
 ;---
 ;二つの区間の和 (または差) の幅は、足される (または引かれる) 区間の幅の関数となることを示せ。
-(load "sicp2.1.4_2.8.rkt")
+(load "sicp2.1.4_2.08.rkt")
 (define (width-interval z)
   (/ (- (upper-bound z) (lower-bound z)) 2.0))
 ; 区間x(x-Wx, x+Wx), y(y-Wy, y+Wy)を考える。
