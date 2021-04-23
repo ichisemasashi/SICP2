@@ -6,4 +6,4 @@
 (define (center i)
   (/ (+ (lower-bound i) (upper-bound i)) 2.0))
 (define (width i)
-  (/ (- (lower-bound i) (upper-bound i)) 2.0))
+  (/ (- (upper-bound i) (lower-bound i)) 2.0))
