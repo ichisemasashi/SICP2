@@ -3,3 +3,5 @@
   (if (= b 0)
       a
       (gcd b (remainder a b))))
+(define (square x)
+  (* x x))
