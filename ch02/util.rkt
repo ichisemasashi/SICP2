@@ -5,3 +5,5 @@
       (gcd b (remainder a b))))
 (define (square x)
   (* x x))
+(define (atom? x)
+  (not (pair? x)))
