@@ -21,7 +21,9 @@
 ;  (square-of-four identity flip-vert identity flip-vert))
 ;また、square-limit は次のように表現できます。
 (load "sicp2.2.4_2.44.rkt")
+(load "util.rkt")
 (define (square-limit painter n)
   (let ((combine4 (square-of-four
                        flip-horiz identity rotate180 flip-vert)))
     (combine4 (corner-split painter n))))
+(define rotate180 (compose flip-vert flip-horize))
