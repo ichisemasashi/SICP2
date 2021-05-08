@@ -14,3 +14,9 @@
            ((element-of-set? (car B) A) (iter A (cdr B) U))
            (else (iter A (cdr B)) (cons (car B) U))))
   (iter A B A))
+
+(load "util.rkt")
+(define (union-set s1 s2)
+  (define (f x)
+    (not (element-of-set? x s1)))
+  (append s1 (filter f s2)))

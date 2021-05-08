@@ -60,3 +60,15 @@
            ((atom? (car s)) (display (car s)) (display " ") (pr (cdr s)))
            (else (display "(") (pr (car s)) (pr (cdr s)) (display ")"))))
   (display "(") (pr s) (display ")"))
+
+(define (accumulate op init seq)
+  (if (null? seq) init
+     (op (car seq)
+          (accumulate op init (cdr seq)))))
+(define (append seq1 seq2)
+  (accumulate cons seq2 seq1))
+(define (filter predicate seq)
+  (cond ((null? seq) nil)
+         ((predicate (car seq))
+          (cons (car seq) (filter predicate (cdr seq))))
+         (else (filter predicate (cdr seq)))))
