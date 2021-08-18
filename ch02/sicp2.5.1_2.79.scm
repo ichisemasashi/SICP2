@@ -2,6 +2,8 @@
 ;;二つの数値の等価性をテストするジェネリックな等価性述語 equ? を定義し、ジェネリック算術演算パッケージに組み込め。
 ;;この演算は、通常の数値、有理数、複素数に対して動作しなければならない。
 
+(define (equ? x y) (apply-generic 'equ? x y))
+
 (define (install-scheme-number-package)
   (define (tag x)
     (attach-tag 'scheme-number x))
