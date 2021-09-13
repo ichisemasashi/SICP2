@@ -17,8 +17,11 @@
 ;; a. Louisの強制型変換手続きを組み込むと、もしscheme-number 型の二つの引数や
 ;;complex 型の二つの引数とある演算に対して apply-generic が呼ばれ、
 ;;その演算がテーブル内でそれらの型に対して見つからない場合は、
-;;何が起こるだろうか。例えば、ジェネリックな指数関数演算を定義したとする。
+;;何が起こるだろうか。
 
+;; -> apply-genericはcoerced型に対して再帰的に自分自身を呼び出すので、無限再帰になってしまいます。
+
+;; 例えば、ジェネリックな指数関数演算を定義したとする。
 (define (exp x y)
   (apply-generic 'exp x y))
 
@@ -37,10 +40,34 @@
 ;; b.同じ型の引数に対する強制型変換について手を加えないといけないとする Louis の考え方は正しいだろうか。
 ;;それとも、apply-generic はそのままの状態で正しく動作するだろうか。
 
-
+;; ->  Louisのコードは動作しません。apply-genericはそのまま動作します。
 
 
 
 
 ;;;;;;;;;;
 ;; c.apply-genericを修正し、二つの引数が同じ型であれば強制型変換を試行しないようにせよ。
+
+(define (apply-generic op . args)
+  (define (no-method type-tags)
+    (error "No method for these types"
+           (list op type-tags)))
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (get op type-tags)))
+      (if proc
+          (apply proc (map contents args))
+          (if (= (length args) 2)
+              (let ((type1 (car type-tags))
+                    (type2 (cadr type-tags))
+                    (a1 (car args))
+                    (a2 (cadr args)))
+                (if (equal? type1 type2)
+                    (no-method type-tags)
+                    (let ((t1->t2 (get-coercion type1 type2))
+                          (t2->t1 (get-coercion type2 type1))
+                          (a1 (car args))
+                          (a2 (cadr args)))
+                      (cond (t1->t2 (apply-generic op (t1->t2 a1) a2))
+                            (t2->t1 (apply-generic op a1 (t2->t1 a2)))
+                            (else (no-method type-tags))))))
+              (no-method type-tags))))))
