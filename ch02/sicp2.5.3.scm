@@ -47,4 +47,92 @@
 ;;同じ不定元を持っていなければならないということにします。
 
 ;;このシステムの設計にあたっては、おなじみのデータ抽象化の規律に従います。
-;;多項式はpoly というデータ構造を使って表現し、poly はひとつの変数と項の集まりからなります。poly からそれらの部品を抽出するセレクタ variable, term-list と、与えられた変数と項のリストから poly を組み立てるコンストラクタ make-poly があると想定します。変数はただの記号なので、変数の比較には 2.3.2 節の same-variable? 手続きが使えます。以下の手続きは、poly の加算と乗算を定義するものです。
+;;多項式はpoly というデータ構造を使って表現し、poly はひとつの変数と項の集まりからなります。
+;;poly からそれらの部品を抽出するセレクタ variable, term-list と、
+;;与えられた変数と項のリストから poly を組み立てるコンストラクタ make-poly があると想定します。
+;;変数はただの記号なので、変数の比較には 2.3.2 節の same-variable? 手続きが使えます。
+;;以下の手続きは、poly の加算と乗算を定義するものです。
+
+(define (add-poly p1 p2)
+  (if (same-variable? (variable p1) (variable p2))
+      (make-poly (variable p1)
+                 (add-terms (term-list p1) (term-list p2)))
+      (error "Polys not in same var: ADD-POLY" (list p1 p2))))
+
+(define (mul-poly p1 p2)
+  (if (same-variable? (variable p1) (variable p2))
+      (make-poly (variable p1)
+                 (mul-terms (term-list p1) (term-list p2)))
+      (error "Polys not in same var: MUL-POLY" (list p1 p2))))
+
+;;多項式を私たちのジェネリック算術演算システムに組み入れるためには、タイプタグをつける必要があります。
+;;タグとしては polynomial を使うことにして、タグつき多項式に対する適切な演算を演算テーブルに組み込みます。
+;;2.5.1 節同様、コードはすべて多項式パッケージの組み込み手続きの中に埋め込むことにします。
+
+(define (install-polynomial-package)
+  ;; 内部手続き
+  ;;poly の表現
+  (define (make-poly variable term-list)
+    (cons variable term-list))
+  (define (variable p) (car p))
+  (define (term-list p) (cdr p))
+  (define (same-variable? v1 v2) ;; from sicp2.3.2.rkt
+    (and (variable? v1)
+         (variable? v2)
+         (eq? v1 v2)))
+  (define (variable? x) ;; from sicp2.3.2.rkt
+    (symbol? x))
+  ;;項と項リストの表現
+  ⟨下記の adjoin-term . . . coeff 手続き⟩
+  (define (add-poly p1 p2) ...)
+  ⟨add-poly が使う手続き⟩
+  (define (mul-poly p1 p2) ...)
+  ⟨mul-poly が使う手続き⟩
+  ;; システムのほかの部分とのインターフェイス
+  (define (tag p) (attach-tag 'polynomial p))
+  (put 'add '(polynomial polynomial)
+       (lambda (p1 p2) (tag (add-poly p1 p2))))
+  (put 'mul '(polynomial polynomial)
+       (lambda (p1 p2) (tag (mul-poly p1 p2))))
+  (put 'make 'polynomial
+       (lambda (var terms) (tag (make-poly var terms))))
+  'done)
+
+;;多項式の加算は項ごとに実行します。同じ次数の項 (つまり、同じ指数を持つ不定元) 同士を
+;;組み合わせる必要があります。これは、足す項と足される項の係数の合計を係数とする、
+;;同じ次数を持つ新しい項を作ることで行えます。
+;;片方にだけ項があって、もう一方のほうに同じ次数の項がない場合は、
+;;構築中の和の多項式にその項をそのまま追加します。
+
+;;項リストを操作するために、空の項リストを返す the-empty-termlist というコンストラクタと、
+;;項リストに新しい項を追加するadjoin-termというコンストラクタがあると想定します。
+;;さらに、与えられた項リストが空かどうか調べる empty-termlist? という述語と、
+;;項リストから最大次数の項を取り出すセレクタ first-term、
+;;最大次数の項以外の全ての項を返すセレクタ rest-terms もあると想定します。
+;;項を操作するために、与えられた次数と係数から項を構築するコンストラクタ make-term と、
+;;項の次数と係数をそれぞれ返すセレクタ order と coeff があると想定します。
+;;これらの演算によって、項と項リストがデータ抽象として捉えられるようになり、
+;;具体的な表現は別に考えることができます。
+
+;;以下は、二つの多項式の和となる項リストを構築する手続きです。
+
+(define (add-terms L1 L2)
+  (cond ((empty-termlist? L1) L2)
+        ((empty-termlist? L2) L1)
+        (else
+         (let ((t1 (first-term L1))
+               (t2 (first-term L2)))
+           (cond ((< (order t2) (order t1))
+                  (adjoin-term
+                   t1 (add-terms (rest-terms L1) L2)))
+                 ((< (order t1) (order t2))
+                  (adjoin-term
+                   t2 (add-terms L1 (rest-terms L2))))
+                 (else
+                  (adjoin-term
+                   (make-term (order t1)
+                              (add (coeff t1) (coeff t2)))
+                   (add-terms (rest-terms L1)
+                              (rest-terms L2)))))))))
+
+;;ここでの最も重要なポイントは、項の係数同士を足し合わせるのにジェネリッ ク加算手続き add を使っているというところです。以下で見ていくように、こ のことは強力な結果をもたらします。
