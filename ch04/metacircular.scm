@@ -235,8 +235,69 @@
 (define (false? x)
   (eq? x false))
 
+;;;;;;;;;;;;;;;;; 手続きの表現
+;; (apply-primitive-procedure <proc> <args>)
+;; 与えられた基本手続きをリスト ⟨args⟩ 中の引数の値に適用し、 その結果を返します。
+;; (primitive-procedure? <proc>)
+;; ⟨proc⟩ が基本手続きかどうかテストします。
+;; 複合手続きは、コンストラクタ make-procedure を使って、仮引数・手続き 本体・環境によって構築します。
+(define (make-procedure parameters body env)
+  (list 'procedure parameters body env))
+(define (compound-procedure? p)
+  (tagged-list? p 'procedure))
+(define (procedure-parameters p)
+  (cadr p))
+(define (procedure-body p)
+  (caddr p))
+(define (procedure-environment p)
+  (cadddr p))
 
+;;;;;;;;;;;;;;;;; 環境に対する演算
+;; (lookup-variable-value <var> <env>)
+;; 環境 ⟨env⟩ 内で記号 ⟨var⟩ に束縛されている値を返します。変数が束縛されていない場合、エラーを発生させます。
+;; (extend-environment <variables> <values> <base-env>)
+;; リスト ⟨variables⟩ の記号がリスト ⟨values⟩ の対応する要素に束 縛されている新しいフレームひとつからなる新しい環境を返します。環 境 ⟨base-env ⟩ が外側の環境となります。
+;; (define-variable! <var> <value> <env>)
+;; 環境 ⟨env ⟩ の一つ目のフレームに、変数 ⟨var ⟩ と値 ⟨value ⟩ を関 連づける新たな束縛を追加します。
+;; (set-variable-value! <var> <value> <env>)
+;; 環境 ⟨env⟩ 中の変数 ⟨var⟩ の束縛を変更して、変数を値 ⟨value⟩ に束縛し直します。変数が未束縛であればエラーを発生させます。
 
+;; 環境はフレームのリストとして表現する。リストの cdr が外側の環境となります。空の環境は、単純に空リス トです。
+(define (enclosing-environment env) (cdr env))
+(define (first-frame env) (car env))
+(define the-empty-environment '())
+
+;; 環境のそれぞれのフレームはリストのペアとして表現します。ひとつはそのフレームで束縛される変数のリストで、もうひとつは関連づけられる値のリストです。
+(define (make-frame variables values)
+  (cons variables values))
+(define (frame-variables frame) (car frame))
+(define (frame-values frame) (cdr frame))
+(define (add-binding-to-frame! var val frame)
+  (set-car! frame (cons var (car frame)))
+  (set-cdr! frame (cons val (cdr frame))))
+
+;; 変数を値に関連づける新しいフレームによって環境を拡張する
+(define (extend-environment vars vals base-env)
+  (if (= (length vars) (length vals))
+      (cons (make-frame vars vals) base-env)
+      (if (< (length vars) (length vals))
+          (error "Too many arguments supplied" vars vals)
+          (error "Too few arguments supplied" vars vals))))
+
+;; 環境内の変数を探すには、一つ目のフレームの変数リストを走査します。求め る変数が見つかれば、値リスト内の対応する要素を返します。現在のフレーム で変数が見つからなければ、外側の環境、さらにその外側の環境と検索してい きます。空の環境に達したら、“未束縛変数” エラーを発生させます。
+(define (lookup-variable-value var env)
+  (define (env-loop env)
+    (define (scan vars vals)
+      (cond ((null? vars)
+             (env-loop (enclosing-environment env)))
+            ((eq? var (car vars)) (car vals))
+            (else (scan (cdr vars) (cdr vals)))))
+    (if (eq? env the-empty-environment)
+        (error "Unbound variable" var)
+        (let ((frame (first-frame env)))
+          (scan (frame-variables frame)
+                (frame-values frame)))))
+  (env-loop env))
 
 
 
