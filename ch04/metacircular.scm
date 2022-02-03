@@ -3,6 +3,9 @@
 ;;
 ;; from SICP2
 
+(define apply-in-underlying-scheme apply)
+
+
 ;;;;;;;;;;;;;;;;; 4.1.1 評価器のコア
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -325,12 +328,27 @@
     (scan (frame-variables frame) (frame-values frame))))
 
 ;;;;;;;;;;;;;;;;; 4.1.4 評価器をプログラムとして実行する
+;; setup-environment
+;; 基本手続きの名前と実装手続きをリストから取ります。
+(define primitive-procedures
+  (list (list 'car car)
+        (list 'cdr cdr)
+        (list 'cons cons)
+        (list 'null? null?)
+        ;⟨more primitives⟩ 
+        ))
+(define (primitive-procedure-names)
+  (map car primitive-procedures))
+(define (primitive-procedure-objects)
+  (map (lambda (proc) (list 'primitive (cadr proc)))
+       primitive-procedures))
+
 (define (setup-environment)
   (let ((initial-env
-    (extend-environment
-      (primitive-procedure-names)
-      (primitive-procedure-objects)
-      the-empty-environment)))
+        (extend-environment
+           (primitive-procedure-names)
+           (primitive-procedure-objects)
+           the-empty-environment)))
   (define-variable! 'true true initial-env)
   (define-variable! 'false false initial-env)
   initial-env))
@@ -339,19 +357,6 @@
 (define (primitive-procedure? proc)
   (tagged-list? proc 'primitive))
 (define (primitive-implementation proc) (cadr proc))
-;; setup-environment
-;; 基本手続きの名前と実装手続きをリストから取ります。
-(define primitive-procedures
-  (list (list 'car car)
-        (list 'cdr cdr)
-        (list 'cons cons)
-        (list 'null? null?)
-        ⟨more primitives⟩ ))
-(define (primitive-procedure-names)
-  (map car primitive-procedures))
-(define (primitive-procedure-objects)
-  (map (lambda (proc) (list 'primitive (cadr proc)))
-       primitive-procedures))
 
 ;; 基本手続きを適用する
 (define (apply-primitive-procedure proc args)
